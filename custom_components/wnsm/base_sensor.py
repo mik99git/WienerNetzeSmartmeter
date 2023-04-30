@@ -47,7 +47,6 @@ class BaseSensor(SensorEntity, ABC):
         self._attr_name = zaehlpunkt
         self._attr_icon = self._icon()
         self._attr_device_class = SensorDeviceClass.ENERGY
-        self._attr_state_class = SensorStateClass.TOTAL_INCREASING
         self._attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
         self._attr_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
 
@@ -56,6 +55,10 @@ class BaseSensor(SensorEntity, ABC):
         self._state: int | str | None = None
         self._available: bool = True
         self._updatets: str | None = None
+
+    @property
+    def _attr_state_class(self):
+        return SensorStateClass.TOTAL_INCREASING
 
     @property
     def _id(self):

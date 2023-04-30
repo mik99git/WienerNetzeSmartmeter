@@ -22,7 +22,7 @@ class LiveSensor(BaseSensor, SensorEntity):
     async def get_daily_consumption(self, smartmeter: Smartmeter, date: datetime):
         """
         asynchronously get and parse /tages_verbrauch response
-        Returns response already sanitzied of the specified zahlpunkt in ctor
+        Returns response already sanitized of the specified zaehlpunkt in ctor
         """
         response = await self.hass.async_add_executor_job(
             smartmeter.tages_verbrauch, date, self.zaehlpunkt
