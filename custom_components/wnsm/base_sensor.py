@@ -8,7 +8,7 @@ from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorStateClass,
     SensorEntity,
-    ENTITY_ID_FORMAT
+    ENTITY_ID_FORMAT,
 )
 from homeassistant.const import UnitOfEnergy
 from homeassistant.util import slugify
@@ -90,10 +90,21 @@ class BaseSensor(SensorEntity, ABC):
     def contracts2zaehlpunkte(self, contracts: dict) -> [dict]:
         if contracts is None or len(contracts) == 0:
             raise RuntimeError(f"Cannot access Zaehlpunkt {self.zaehlpunkt}")
-        geschaeftspartner = contracts[0]["geschaeftspartner"] if "geschaeftspartner" in contracts[0] else None
-        if contracts is not None and isinstance(contracts, list) and len(contracts) > 0 and "zaehlpunkte" in contracts[0]:
+        geschaeftspartner = (
+            contracts[0]["geschaeftspartner"]
+            if "geschaeftspartner" in contracts[0]
+            else None
+        )
+        if (
+            contracts is not None
+            and isinstance(contracts, list)
+            and len(contracts) > 0
+            and "zaehlpunkte" in contracts[0]
+        ):
             zaehlpunkte = [
-                {**z, "geschaeftspartner": geschaeftspartner} for z in contracts[0]["zaehlpunkte"] if z["zaehlpunktnummer"] == self.zaehlpunkt
+                {**z, "geschaeftspartner": geschaeftspartner}
+                for z in contracts[0]["zaehlpunkte"]
+                if z["zaehlpunktnummer"] == self.zaehlpunkt
             ]
         else:
             zaehlpunkte = []
@@ -106,7 +117,9 @@ class BaseSensor(SensorEntity, ABC):
         """
         contracts = await self.hass.async_add_executor_job(smartmeter.zaehlpunkte)
         zaehlpunkte = self.contracts2zaehlpunkte(contracts)
-        zaehlpunkt = [z for z in zaehlpunkte if z["zaehlpunktnummer"] == self.zaehlpunkt]
+        zaehlpunkt = [
+            z for z in zaehlpunkte if z["zaehlpunktnummer"] == self.zaehlpunkt
+        ]
         if len(zaehlpunkt) == 0:
             raise RuntimeError(f"Zaehlpunkt {self.zaehlpunkt} not found")
 
@@ -119,7 +132,10 @@ class BaseSensor(SensorEntity, ABC):
     async def get_consumption(self, smartmeter: Smartmeter, start_date: datetime):
         """Return 24h of hourly consumption starting from a date"""
         response = await self.hass.async_add_executor_job(
-            smartmeter.verbrauch, self._attr_extra_state_attributes.get('customerId'), self.zaehlpunkt, start_date
+            smartmeter.verbrauch,
+            self._attr_extra_state_attributes.get("customerId"),
+            self.zaehlpunkt,
+            start_date,
         )
         if "Exception" in response:
             raise RuntimeError(f"Cannot access daily consumption: {response}")
@@ -129,7 +145,10 @@ class BaseSensor(SensorEntity, ABC):
     async def get_consumption_raw(self, smartmeter: Smartmeter, start_date: datetime):
         """Return daily consumptions from the given start date until today"""
         response = await self.hass.async_add_executor_job(
-            smartmeter.verbrauchRaw, self._attr_extra_state_attributes.get('customerId'), self.zaehlpunkt, start_date
+            smartmeter.verbrauchRaw,
+            self._attr_extra_state_attributes.get("customerId"),
+            self.zaehlpunkt,
+            start_date,
         )
         if "Exception" in response:
             raise RuntimeError(f"Cannot access daily consumption: {response}")
@@ -140,10 +159,13 @@ class BaseSensor(SensorEntity, ABC):
         """Return three years of historic quarter-hourly data"""
         response = await self.hass.async_add_executor_job(
             smartmeter.historical_data,
+            self._attr_extra_state_attributes.get("customerId"),
             self.zaehlpunkt,
             None,
             None,
-            ValueType.from_str(self._attr_extra_state_attributes.get('granularity', 'QUARTER_HOUR'))
+            ValueType.from_str(
+                self._attr_extra_state_attributes.get("granularity", "QUARTER_HOUR")
+            ),
         )
         if "Exception" in response:
             raise RuntimeError(f"Cannot access historic data: {response}")

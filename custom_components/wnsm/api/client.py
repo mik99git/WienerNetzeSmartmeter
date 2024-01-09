@@ -260,7 +260,7 @@ class Smartmeter:
         customer_id: str,
         zaehlpunkt: str,
         date_from: datetime,
-        resolution: const.Resolution = const.Resolution.HOUR
+        resolution: const.Resolution = const.Resolution.HOUR,
     ):
         """Returns energy usage.
 
@@ -285,7 +285,7 @@ class Smartmeter:
         query = const.build_verbrauchs_args(
             # This one does not have a dateTo...
             dateFrom=self._dt_string(date_from),
-            dayViewResolution=resolution.value
+            dayViewResolution=resolution.value,
         )
         return self._call_api(endpoint, query=query)
 
@@ -393,6 +393,7 @@ class Smartmeter:
 
     def historical_data(
         self,
+        customer_id: str = None,
         zaehlpunkt: str = None,
         date_from: date = None,
         date_until: date = None,
@@ -424,15 +425,20 @@ class Smartmeter:
             "Accept": "application/json"
         }
 
+        endpoint = f"zaehlpunkte/{customer_id}/{zaehlpunkt}/messwerte"
         data = self._call_api(
-            "zaehlpunkte/messwerte",
+            endpoint,
             base_url=const.API_URL_B2B,
             query=query,
             extra_headers=extra,
         )
 
         # Some Sanity Checks...
-        if len(data) != 1 or data[0]["zaehlpunkt"] != zaehlpunkt or len(data[0]["zaehlwerke"]) != 1:
+        if (
+            len(data) != 2
+            or data["zaehlpunkt"] != zaehlpunkt
+            or len(data["zaehlwerke"]) != 1
+        ):
             # TODO: Is it possible to have multiple zaehlwerke in one zaehlpunkt?
             # I guess so, otherwise it would not be a list...
             # Probably (my guess), we would see this on the OBIS Code.
@@ -440,7 +446,9 @@ class Smartmeter:
             # Keep that in mind if for someone this fails.
             logger.debug("Returned data: %s" % data)
             raise SmartmeterQueryError("Returned data does not match given zaehlpunkt!")
-        obis_code = data[0]["zaehlwerke"][0]["obisCode"]
+        obis_code = data["zaehlwerke"][0]["obisCode"]
         if obis_code[0] != "1":
-            logger.warning(f"The OBIS code of the meter ({obis_code}) reports that this meter does not count electrical energy!")
-        return data[0]["zaehlwerke"][0]
+            logger.warning(
+                f"The OBIS code of the meter ({obis_code}) reports that this meter does not count electrical energy!"
+            )
+        return data["zaehlwerke"][0]
