@@ -1,9 +1,4 @@
 {
-    "python.linting.pylintEnabled": true,
-    "python.linting.enabled": true,
-    "python.linting.pylintArgs": [
-        "--disable=W0107"
-    ],
     "files.associations": {
         "*.yaml": "home-assistant"
     },
